@@ -1,0 +1,27 @@
+name: Korean market preview (manual only)
+on:
+  workflow_dispatch:
+# After explicit approval, schedule cron '0 23 * * *' = 08:00 Asia/Seoul.
+# A schedule can be delayed; GitHub Actions is not an exact-time service.
+permissions:
+  contents: read
+concurrency:
+  group: korea-daily-preview
+  cancel-in-progress: false
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: PYTHONPATH=src python -m unittest discover -s tests -v
+      - run: PYTHONPATH=src python -c 'from korea_daily.cli import main; main()'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: daily-preview
+          path: |
+            reports/
+            state/runs.log
+          retention-days: 30
